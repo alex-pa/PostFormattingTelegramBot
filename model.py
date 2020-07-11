@@ -1,15 +1,29 @@
 class Post:
     def __init__(self):
-        self.word = None
+        self.words = []
         self.hashTags = None
         self.oxford = None
         self.cambridge = None
         self.context = None
 
     def print_post(self):
-        word = self.word.print_word()
-        line_end = "─────────────"
-        result = "{0}{1}\n{2}".format(word, line_end, self.hashTags)
+        words = ''
+        for word in self.words:
+            index = self.words.index(word)
+            if index + 1 != len(self.words):
+                words += word.print_word(index) + '\n'
+            else:
+                words += word.print_word(index)
+
+        line_end = '─────────────'
+        if not self.words[-1].definitions:
+            line_end = ''
+
+        tags = ''
+        if self.hashTags:
+            tags = self.hashTags
+
+        result = "{0}{1}\n{2}".format(words, line_end, tags)
         return result
 
     def print_links(self):
@@ -36,13 +50,18 @@ class Word:
         self.synonyms = None
         self.definitions = []
 
-    def print_word(self):
+    def print_word(self, word_number):
+        word_number += 1
+        word = '🖍 '
+        if word_number != 1:
+            word = '☘ '
         line = "──────────────────────"
+
         if self.phoneticTranscription:
             phonetic_transcription = "*/{0}/*".format(self.phoneticTranscription)
-            word = "🖍 _{0}_ — {1} {2}\n{3}".format(self.word, phonetic_transcription, self.partOfSpeech, line)
+            word += "_{0}_ — {1} {2}\n{3}".format(self.word, phonetic_transcription, self.partOfSpeech, line)
         else:
-            word = "🖍 _{0}_ — {1}\n{2}".format(self.word, self.partOfSpeech, line)
+            word += "_{0}_ — {1}\n{2}".format(self.word, self.partOfSpeech, line)
 
         if self.synonyms:
             synonym_or_synonyms = "synonym"
