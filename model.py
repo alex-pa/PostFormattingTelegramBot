@@ -36,7 +36,10 @@ class Post:
         if self.context:
             result += divider + "Context Reverso - " + self.context
         if self.cambridge:
-            result += "\n" + "Cambridge Dictionary - " + self.cambridge
+            space = "\n"
+            if not self.cambridge and not self.oxford:
+                space = ""
+            result += space + "Cambridge Dictionary - " + self.cambridge
         if result != "":
             result = "`{0}`".format(result)
         return result

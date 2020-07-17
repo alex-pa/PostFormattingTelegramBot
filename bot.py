@@ -6,7 +6,8 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeybo
 token = "yourToken"
 bot = telebot.TeleBot(token)
 
-post_dict = {}  # saves posts data
+post_dict = {}  # saves posts data while user's working on it
+storage_channel_id = 'integer'  # channel's id to send final results to
 
 
 def main_menu_markup():
@@ -74,6 +75,15 @@ def tags_markup(message):
     return markup
 
 
+def send_to_storage_markup():
+    markup = InlineKeyboardMarkup()
+    markup.row_width = 2
+    markup.add(InlineKeyboardButton("Send", callback_data="send_to_storage"),
+               InlineKeyboardButton("Edit", callback_data="edit_before_sending"),
+               InlineKeyboardButton("Cancel", callback_data="cancel_sending_to_storage"),)
+    return markup
+
+
 @bot.message_handler(commands=['start'])
 def process_start(message):
     bot.send_message(message.chat.id, "Create new post here.",
@@ -132,13 +142,35 @@ def test_callback(call):
         links = post.print_links()
         if links:
             bot.send_message(call.message.chat.id, links, parse_mode="Markdown")
+        bot.send_message(call.message.chat.id, "You can send this posts to storage, or edit them manually and then "
+                                               "send it. Press 'Cancel' button to not do it.",
+                         reply_markup=send_to_storage_markup())
+    if call.data == "send_to_storage":
+        bot.answer_callback_query(call.id, "Sending to storage!")
+        post = post_dict[call.message.chat.id]
+        bot.send_message(storage_channel_id, post.print_post(), parse_mode="Markdown")
+        links = post.print_links()
+        if links:
+            bot.send_message(storage_channel_id, links, parse_mode="Markdown")
         post_dict.pop(call.message.chat.id)
-        bot.send_message(call.message.chat.id, "Create new post here.",
-                         reply_markup=main_menu_markup())
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                              text="Create new post here.", reply_markup=main_menu_markup())
+    if call.data == "edit_before_sending":
+        bot.answer_callback_query(call.id, "Editing!")
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                    text="Send manually edited post here.")
+        post = post_dict[call.message.chat.id]
+        msg = bot.send_message(call.message.chat.id, post.print_post())
+        bot.register_next_step_handler(msg, process_edited_post)
+    if call.data == "cancel_sending_to_storage":
+        post_dict.pop(call.message.chat.id)
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                              text="Create new post here.", reply_markup=main_menu_markup())
 
 
 def process_word_name(message):
     word_name = message.text
+    word_name = word_name.capitalize()
     post = post_dict[message.chat.id]
     new_word = model.Word(word_name)
     post.words.append(new_word)
@@ -244,6 +276,17 @@ def process_adding_links_context(message):
         post_dict[message.chat.id] = post
 
     bot.send_message(message.chat.id, post.print_post(), reply_markup=post_markup(message), parse_mode="Markdown")
+
+
+def process_edited_post(message):
+    post = post_dict[message.chat.id]
+    post_edited = message.text
+    bot.send_message(storage_channel_id, post_edited, parse_mode="Markdown")
+    links = post.print_links()
+    if links:
+        bot.send_message(storage_channel_id, links, parse_mode="Markdown")
+    post_dict.pop(message.chat.id)
+    bot.send_message(message.chat.id, "Create new post here.", reply_markup=main_menu_markup())
 
 
 if __name__ == "__main__":
