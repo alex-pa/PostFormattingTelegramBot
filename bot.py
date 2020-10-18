@@ -3,11 +3,11 @@ import model
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, \
     ReplyKeyboardRemove
 
-token = "yourToken"
+token = "your_token"
 bot = telebot.TeleBot(token)
 
 post_dict = {}  # saves posts data while user's working on it
-storage_channel_id = 'integer'  # channel's id to send final results to
+storage_channel_id = "channel's_id"  # channel's id to send final results to
 
 
 def main_menu_markup():
